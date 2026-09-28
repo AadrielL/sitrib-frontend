@@ -8,9 +8,9 @@ Este guia explica como a camada do frontend se conecta conceitualmente e tecnica
 
 | Estrutura no Backend (Python) | Componente no Frontend (React/TS) | Como se Comunicam / Espelham |
 |---|---|---|
-| **Max-Heap** (`src/fila_cobranca.py`) | `src/pages/FilaCobrancaView.tsx` | O backend gerencia o heap `(-score, cpf)`; o frontend consome a lista ordenada via `ApiService.listarFilaCobranca()`. |
-| **Tabela Hash** (`src/tabela_hash.py`) | `src/services/api.ts` | O backend faz a busca indexada em $O(1)$; o frontend consome débitos imediatos sem varrer coleções lentas. |
-| **Grafo** (`src/grafo.py`) | `src/pages/BuscaFiscal.tsx` | O backend mapeia Contribuinte $\rightarrow$ Imóveis $\rightarrow$ Processos; o frontend renderiza visualmente essa teia de relações. |
+| **Max-Heap** (`src/estruturas/fila_cobranca.py`) | `src/pages/FilaCobrancaView.tsx` | O backend gerencia o heap `(-score, cpf)`; o frontend consome a lista ordenada via `ApiService.listarFilaCobranca()`. |
+| **Tabela Hash** (`src/estruturas/tabela_hash.py`) | `src/services/api.ts` | O backend faz a busca indexada em $O(1)$; o frontend consome débitos imediatos sem varrer coleções lentas. |
+| **Grafo** (`src/estruturas/grafo.py`) | `src/pages/BuscaFiscal.tsx` | O backend mapeia Contribuinte $\rightarrow$ Imóveis $\rightarrow$ Processos; o frontend renderiza visualmente essa teia de relações. |
 | **Seeds** (`seeds/mock_data.py`) | `src/services/mockData.ts` | Conjunto idêntico de contribuintes de Palmas/TO, débitos de IPTU/ISS e processos de execução fiscal. |
 | **BuscaService** (`src/services/busca_service.py`) | `ApiService.buscarContribuinte` | Mesmas validações de 11 dígitos (CPF) e 14 dígitos (CNPJ) e mesmas mensagens de erro para documentos não encontrados. |
 
