@@ -190,3 +190,120 @@ export const MOCK_FILA_COBRANCA: ItemFilaCobranca[] = [
     tem_processo_judicial: false,
   },
 ];
+
+
+// -----------------------------------------------------------------------------
+// Mock de Tributos Cadastrados (RF04 e RF08)
+// -----------------------------------------------------------------------------
+import type { TributoConfig, LogOperacao } from '../types/tributario';
+
+export const MOCK_TRIBUTOS: TributoConfig[] = [
+  {
+    codigo: 'TRB-IPTU-PALMAS',
+    nome: 'Imposto Predial e Territorial Urbano',
+    tipo: 'IPTU',
+    categoria: 'DIRETO',
+    aliquota_padrao: 1.25,
+    descricao: 'Tributo incidente sobre a propriedade imobiliária predial e territorial no perímetro urbano de Palmas.',
+    ativo: true,
+    base_legal: 'Lei Complementar Municipal nº 105/2005 (Código Tributário de Palmas)',
+    historico: [
+      {
+        id: 'HIST-001',
+        data_alteracao: '2024-01-01',
+        aliquota_anterior: 1.0,
+        aliquota_nova: 1.25,
+        motivo_decreto: 'Decreto Municipal nº 1.840/2023 - Atualização da Planta Genérica de Valores',
+        responsavel: 'Secretaria Municipal de Finanças',
+      },
+      {
+        id: 'HIST-002',
+        data_alteracao: '2022-01-01',
+        aliquota_anterior: 0.9,
+        aliquota_nova: 1.0,
+        motivo_decreto: 'Lei Complementar nº 280/2021',
+        responsavel: 'Câmara Municipal de Palmas',
+      },
+    ],
+  },
+  {
+    codigo: 'TRB-ISS-QN-PALMAS',
+    nome: 'Imposto Sobre Serviços de Qualquer Natureza',
+    tipo: 'ISS',
+    categoria: 'INDIRETO',
+    aliquota_padrao: 3.5,
+    descricao: 'Tributo incidente sobre a prestação onerosa de serviços constantes na lista da Lei Complementar Federal nº 116/2003.',
+    ativo: true,
+    base_legal: 'Lei Complementar Municipal nº 120/2006',
+    historico: [
+      {
+        id: 'HIST-003',
+        data_alteracao: '2023-01-01',
+        aliquota_anterior: 3.0,
+        aliquota_nova: 3.5,
+        motivo_decreto: 'Ajuste fiscal para incentivo de polos tecnológicos de Palmas',
+        responsavel: 'Auditoria Tributária',
+      },
+    ],
+  },
+  {
+    codigo: 'TRB-TAXA-LIXO-2024',
+    nome: 'Taxa de Coleta e Destinação de Resíduos Sólidos',
+    tipo: 'TAXA_LIXO',
+    categoria: 'TAXA_MUNICIPAL',
+    aliquota_padrao: 0.45,
+    descricao: 'Custeio dos serviços públicos de coleta, remoção e destinação de resíduos domiciliares.',
+    ativo: true,
+    base_legal: 'Lei Municipal nº 2.450/2019',
+    historico: [],
+  },
+  {
+    codigo: 'TRB-ALVARA-FUNC',
+    nome: 'Taxa de Fiscalização e Instalação de Alvará',
+    tipo: 'ALVARA',
+    categoria: 'TAXA_MUNICIPAL',
+    aliquota_padrao: 2.0,
+    descricao: 'Taxa anual para regularidade do funcionamento de estabelecimentos industriais, comerciais e de serviços.',
+    ativo: true,
+    base_legal: 'Código de Posturas de Palmas nº 042/1997',
+    historico: [],
+  },
+  {
+    codigo: 'TRB-COSIP-URBANA',
+    nome: 'Contribuição de Iluminação Pública (COSIP)',
+    tipo: 'COSIP',
+    categoria: 'DIRETO',
+    aliquota_padrao: 1.1,
+    descricao: 'Contribuição para expansão e manutenção do sistema de iluminação pública da capital.',
+    ativo: true,
+    base_legal: 'Emenda Constitucional nº 39/2002 e Lei Municipal nº 1.412',
+    historico: [],
+  },
+];
+
+export const MOCK_LOGS: LogOperacao[] = [
+  {
+    id: 'LOG-001',
+    data_hora: '2026-10-19 14:32:10',
+    usuario: 'adriel.morais@mail.uft.edu.br (PO)',
+    acao: 'SIMULACAO',
+    detalhes: 'Simulação de reajuste de IPTU de 1.25% para 1.50% na base de R$ 200.000.000,00',
+    ip_origem: '177.136.240.12',
+  },
+  {
+    id: 'LOG-002',
+    data_hora: '2026-10-19 15:10:45',
+    usuario: 'gabriel.lopes1@mail.uft.edu.br (SM)',
+    acao: 'CALCULO',
+    detalhes: 'Cálculo de IPTU para imóvel CCI-104-NORTE-01 (Valor: R$ 280.000,00)',
+    ip_origem: '189.40.112.5',
+  },
+  {
+    id: 'LOG-003',
+    data_hora: '2026-10-19 16:02:18',
+    usuario: 'sistema.integrador@palmas.to.gov.br',
+    acao: 'ALTERACAO_ALIQUOTA',
+    detalhes: 'Atualização da alíquota padrão de ISS de 3.0% para 3.5%',
+    ip_origem: '10.0.4.1 (Servidor Interno)',
+  },
+];

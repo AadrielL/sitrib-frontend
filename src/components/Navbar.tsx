@@ -6,9 +6,17 @@ import {
   ListOrdered,
   Building2,
   ShieldCheck,
+  Coins,
+  Receipt,
 } from 'lucide-react';
 
-export type AbaNavegacao = 'dashboard' | 'busca' | 'simulador' | 'fila';
+export type AbaNavegacao =
+  | 'dashboard'
+  | 'busca'
+  | 'simulador'
+  | 'fila'
+  | 'tributos'
+  | 'calculo';
 
 interface NavbarProps {
   abaAtiva: AbaNavegacao;
@@ -28,7 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
             <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
               SITRIB
               <span className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">
-                Sprint 2
+                Sprint 3 Ready
               </span>
             </h1>
             <p className="text-xs text-slate-400">
@@ -49,10 +57,10 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
       </div>
 
       {/* Barra de abas de navegação */}
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto py-2">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-2 overflow-x-auto py-2">
         <button
           onClick={() => aoMudarAba('dashboard')}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors shrink-0 ${
             abaAtiva === 'dashboard'
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -64,19 +72,55 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
 
         <button
           onClick={() => aoMudarAba('busca')}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors shrink-0 ${
             abaAtiva === 'busca'
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-300 hover:text-white hover:bg-slate-800'
           }`}
         >
           <Search className="w-4 h-4" />
-          <span>Consulta Fiscal (CPF/CNPJ)</span>
+          <span>Consulta Fiscal</span>
+        </button>
+
+        <button
+          onClick={() => aoMudarAba('calculo')}
+          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors shrink-0 ${
+            abaAtiva === 'calculo'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          <span>Cálculo de Tributos (RF05)</span>
+        </button>
+
+        <button
+          onClick={() => aoMudarAba('tributos')}
+          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors shrink-0 ${
+            abaAtiva === 'tributos'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <Coins className="w-4 h-4" />
+          <span>Tributos & Alíquotas (RF04)</span>
+        </button>
+
+        <button
+          onClick={() => aoMudarAba('simulador')}
+          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors shrink-0 ${
+            abaAtiva === 'simulador'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <Calculator className="w-4 h-4" />
+          <span>Simulador & Cenários</span>
         </button>
 
         <button
           onClick={() => aoMudarAba('fila')}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors shrink-0 ${
             abaAtiva === 'fila'
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -84,18 +128,6 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
         >
           <ListOrdered className="w-4 h-4" />
           <span>Fila de Cobrança (Heap)</span>
-        </button>
-
-        <button
-          onClick={() => aoMudarAba('simulador')}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-md text-sm font-medium transition-colors ${
-            abaAtiva === 'simulador'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-300 hover:text-white hover:bg-slate-800'
-          }`}
-        >
-          <Calculator className="w-4 h-4" />
-          <span>Simulador de Tributos</span>
         </button>
       </nav>
     </header>

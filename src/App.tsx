@@ -5,6 +5,8 @@ import { Dashboard } from './pages/Dashboard';
 import { BuscaFiscal } from './pages/BuscaFiscal';
 import { FilaCobrancaView } from './pages/FilaCobrancaView';
 import { SimuladorTributario } from './pages/SimuladorTributario';
+import { CadastroTributos } from './pages/CadastroTributos';
+import { CalculoTributoView } from './pages/CalculoTributoView';
 import { ApiService } from './services/api';
 import type { ItemFilaCobranca } from './types/tributario';
 
@@ -40,11 +42,15 @@ export const App: React.FC = () => {
 
         {abaAtiva === 'busca' && <BuscaFiscal cpfInicial={cpfParaConsulta} />}
 
+        {abaAtiva === 'calculo' && <CalculoTributoView />}
+
+        {abaAtiva === 'tributos' && <CadastroTributos />}
+
+        {abaAtiva === 'simulador' && <SimuladorTributario />}
+
         {abaAtiva === 'fila' && (
           <FilaCobrancaView fila={fila} aoConsultarCpf={handleConsultarCpf} />
         )}
-
-        {abaAtiva === 'simulador' && <SimuladorTributario />}
       </main>
 
       {/* Rodapé Institucional */}
@@ -57,7 +63,7 @@ export const App: React.FC = () => {
             Projeto Integrador UFT • Ciência da Computação • 2026
           </div>
           <div className="text-slate-400">
-            Frontend desacoplado • React 19 + TypeScript + Tailwind CSS
+            Frontend desacoplado • React 19 + TypeScript + Tailwind CSS v4
           </div>
         </div>
       </footer>

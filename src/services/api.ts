@@ -7,6 +7,10 @@ import type {
   ItemFilaCobranca,
   CenarioSimulacao,
   TipoTributo,
+  TributoConfig,
+  SolicitacaoCalculo,
+  ResultadoCalculo,
+  LogOperacao,
 } from '../types/tributario';
 import {
   MOCK_CONTRIBUINTES,
@@ -14,6 +18,8 @@ import {
   MOCK_DIVIDAS,
   MOCK_PROCESSOS,
   MOCK_FILA_COBRANCA,
+  MOCK_TRIBUTOS,
+  MOCK_LOGS,
 } from './mockData';
 
 // =============================================================================
@@ -36,12 +42,6 @@ interface HttpOptions {
   headers?: Record<string, string>;
 }
 
-/**
- * Wrapper sobre fetch que:
- *  1. Anexa o BASE_URL automaticamente
- *  2. Serializa/deserializa JSON
- *  3. Lança erro legível para respostas não-2xx
- */
 async function http<T>(endpoint: string, options: HttpOptions = {}): Promise<T> {
   const { method = 'GET', body, headers = {} } = options;
 
@@ -49,7 +49,7 @@ async function http<T>(endpoint: string, options: HttpOptions = {}): Promise<T> 
     method,
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
       ...headers,
     },
   };
@@ -59,29 +59,24 @@ async function http<T>(endpoint: string, options: HttpOptions = {}): Promise<T> 
   }
 
   const url = `${BASE_URL}${endpoint}`;
-
   const response = await fetch(url, config);
 
-  // Trata respostas de erro do servidor
   if (!response.ok) {
     let mensagemErro = `Erro ${response.status}: ${response.statusText}`;
-
     try {
       const errorBody = await response.json();
-      // FastAPI retorna { "detail": "mensagem" } por padrão
       if (errorBody.detail) {
-        mensagemErro = typeof errorBody.detail === 'string'
-          ? errorBody.detail
-          : JSON.stringify(errorBody.detail);
+        mensagemErro =
+          typeof errorBody.detail === 'string'
+            ? errorBody.detail
+            : JSON.stringify(errorBody.detail);
       }
     } catch {
-      // Corpo não era JSON, usa a mensagem padrão
+      // Retorna erro padrão
     }
-
     throw new Error(mensagemErro);
   }
 
-  // 204 No Content — retorna objeto vazio
   if (response.status === 204) {
     return {} as T;
   }
@@ -89,7 +84,6 @@ async function http<T>(endpoint: string, options: HttpOptions = {}): Promise<T> 
   return response.json() as Promise<T>;
 }
 
-// Função para simular delay de rede (modo mock)
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // =============================================================================
@@ -99,7 +93,6 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export class ApiService {
   // ---------------------------------------------------------------------------
   // 1. Busca de Contribuinte por CPF/CNPJ
-  //    Backend: GET /api/v1/contribuintes/{cpf_cnpj}
   // ---------------------------------------------------------------------------
   static async buscarContribuinte(documento: string): Promise<{
     contribuinte: Contribuinte;
@@ -113,7 +106,6 @@ export class ApiService {
       throw new Error('Informe um CPF válido (11 dígitos) ou CNPJ válido (14 dígitos).');
     }
 
-    // ──── MODO API REAL ────
     if (USAR_BACKEND_REAL) {
       return http<{
         contribuinte: Contribuinte;
@@ -123,9 +115,7 @@ export class ApiService {
       }>(`/contribuintes/${encodeURIComponent(docLimpo)}`);
     }
 
-    // ──── MODO MOCK ────
     await delay(300);
-
     const contribuinte = MOCK_CONTRIBUINTES.find(
       (c) => c.cpf_cnpj.replace(/\D/g, '') === docLimpo
     );
@@ -134,34 +124,22 @@ export class ApiService {
       throw new Error(`Contribuinte com documento '${documento}' não foi localizado no cadastro tributário de Palmas.`);
     }
 
-    const imoveis = MOCK_IMOVEIS.filter(
-      (im) => im.cpf_cnpj_proprietario === contribuinte.cpf_cnpj
-    );
-
-    const dividas = MOCK_DIVIDAS.filter(
-      (d) => d.cpf_cnpj_contribuinte === contribuinte.cpf_cnpj
-    );
-
-    const processos = MOCK_PROCESSOS.filter(
-      (p) => p.cpf_cnpj_contribuinte === contribuinte.cpf_cnpj
-    );
+    const imoveis = MOCK_IMOVEIS.filter((im) => im.cpf_cnpj_proprietario === contribuinte.cpf_cnpj);
+    const dividas = MOCK_DIVIDAS.filter((d) => d.cpf_cnpj_contribuinte === contribuinte.cpf_cnpj);
+    const processos = MOCK_PROCESSOS.filter((p) => p.cpf_cnpj_contribuinte === contribuinte.cpf_cnpj);
 
     return { contribuinte, imoveis, dividas, processos };
   }
 
   // ---------------------------------------------------------------------------
   // 2. Dossiê Fiscal de um Imóvel (CCI)
-  //    Backend: GET /api/v1/imoveis/{inscricao_cci}/dossie
   // ---------------------------------------------------------------------------
   static async obterDossieImovel(inscricaoCci: string): Promise<DossieImovel> {
-    // ──── MODO API REAL ────
     if (USAR_BACKEND_REAL) {
       return http<DossieImovel>(`/imoveis/${encodeURIComponent(inscricaoCci.trim())}/dossie`);
     }
 
-    // ──── MODO MOCK ────
     await delay(200);
-
     const imovel = MOCK_IMOVEIS.find((im) => im.inscricao_cci === inscricaoCci.trim());
     if (!imovel) {
       throw new Error(`Imóvel com inscrição cadastral '${inscricaoCci}' não foi encontrado.`);
@@ -187,23 +165,19 @@ export class ApiService {
   }
 
   // ---------------------------------------------------------------------------
-  // 3. Fila de Cobrança (Max-Heap ordenada por score de risco)
-  //    Backend: GET /api/v1/cobranca/fila-prioridade
+  // 3. Fila de Cobrança (Max-Heap)
   // ---------------------------------------------------------------------------
   static async listarFilaCobranca(): Promise<ItemFilaCobranca[]> {
-    // ──── MODO API REAL ────
     if (USAR_BACKEND_REAL) {
       return http<ItemFilaCobranca[]>('/cobranca/fila-prioridade');
     }
 
-    // ──── MODO MOCK ────
     await delay(200);
     return [...MOCK_FILA_COBRANCA].sort((a, b) => b.score - a.score);
   }
 
   // ---------------------------------------------------------------------------
-  // 4. Simulador de Reajuste Tributário
-  //    Backend: POST /api/v1/tributos/simular-reajuste
+  // 4. Simulador de Reajuste Tributário (RF06 / RF07)
   // ---------------------------------------------------------------------------
   static async simularReajuste(
     tributo: TipoTributo,
@@ -211,7 +185,6 @@ export class ApiService {
     aliquotaProposta: number,
     baseCalculoEstimada: number
   ): Promise<CenarioSimulacao> {
-    // ──── MODO API REAL ────
     if (USAR_BACKEND_REAL) {
       return http<CenarioSimulacao>('/tributos/simular-reajuste', {
         method: 'POST',
@@ -224,15 +197,14 @@ export class ApiService {
       });
     }
 
-    // ──── MODO MOCK ────
     await delay(150);
-
     const valorAtual = Math.round((baseCalculoEstimada * (aliquotaAtual / 100)) * 100) / 100;
     const valorProjetado = Math.round((baseCalculoEstimada * (aliquotaProposta / 100)) * 100) / 100;
     const diferenca = Math.round((valorProjetado - valorAtual) * 100) / 100;
-    const variacaoPercentual = aliquotaAtual > 0
-      ? Math.round(((aliquotaProposta - aliquotaAtual) / aliquotaAtual) * 10000) / 100
-      : 0;
+    const variacaoPercentual =
+      aliquotaAtual > 0
+        ? Math.round(((aliquotaProposta - aliquotaAtual) / aliquotaAtual) * 10000) / 100
+        : 0;
 
     return {
       id: `SIM-${Date.now()}`,
@@ -246,5 +218,134 @@ export class ApiService {
       diferenca,
       variacao_percentual: variacaoPercentual,
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. Gestão de Tributos e Alíquotas (RF04 & RF08)
+  // ---------------------------------------------------------------------------
+  static async listarTributos(): Promise<TributoConfig[]> {
+    if (USAR_BACKEND_REAL) {
+      return http<TributoConfig[]>('/tributos');
+    }
+    await delay(200);
+    return [...MOCK_TRIBUTOS];
+  }
+
+  static async atualizarAliquota(
+    codigoTributo: string,
+    novaAliquota: number,
+    motivo: string,
+    responsavel: string
+  ): Promise<TributoConfig> {
+    if (USAR_BACKEND_REAL) {
+      return http<TributoConfig>(`/tributos/${encodeURIComponent(codigoTributo)}/aliquota`, {
+        method: 'PUT',
+        body: {
+          aliquota: novaAliquota,
+          motivo,
+          responsavel,
+        },
+      });
+    }
+
+    await delay(250);
+    const tributo = MOCK_TRIBUTOS.find((t) => t.codigo === codigoTributo);
+    if (!tributo) {
+      throw new Error(`Tributo com código '${codigoTributo}' não encontrado.`);
+    }
+
+    const histItem = {
+      id: `HIST-${Date.now()}`,
+      data_alteracao: new Date().toISOString().split('T')[0],
+      aliquota_anterior: tributo.aliquota_padrao,
+      aliquota_nova: novaAliquota,
+      motivo_decreto: motivo,
+      responsavel,
+    };
+
+    tributo.aliquota_padrao = novaAliquota;
+    if (!tributo.historico) tributo.historico = [];
+    tributo.historico.unshift(histItem);
+
+    // Registra log da alteração
+    MOCK_LOGS.unshift({
+      id: `LOG-${Date.now()}`,
+      data_hora: new Date().toLocaleString('pt-BR'),
+      usuario: responsavel,
+      acao: 'ALTERACAO_ALIQUOTA',
+      detalhes: `Alíquota de ${tributo.nome} alterada para ${novaAliquota}%. Motivo: ${motivo}`,
+      ip_origem: '127.0.0.1 (Frontend)',
+    });
+
+    return { ...tributo };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 6. Motor Oficial de Cálculo de Tributo (RF05)
+  // ---------------------------------------------------------------------------
+  static async calcularTributo(dados: SolicitacaoCalculo): Promise<ResultadoCalculo> {
+    if (USAR_BACKEND_REAL) {
+      return http<ResultadoCalculo>('/calculos/executar', {
+        method: 'POST',
+        body: dados,
+      });
+    }
+
+    await delay(250);
+
+    const tributoConfig = MOCK_TRIBUTOS.find((t) => t.tipo === dados.tipo_tributo);
+    const aliquota = dados.aliquota_personalizada ?? tributoConfig?.aliquota_padrao ?? 1.0;
+    const base = dados.base_calculo;
+    const deducoes = dados.deducoes ?? 0;
+    const isencaoPct = dados.isencao_percentual ?? 0;
+
+    const baseTributavel = Math.max(0, base - deducoes);
+    const valorBruto = Math.round((baseTributavel * (aliquota / 100)) * 100) / 100;
+    const valorIsencao = Math.round((valorBruto * (isencaoPct / 100)) * 100) / 100;
+    const valorLiquido = Math.max(0, Math.round((valorBruto - valorIsencao) * 100) / 100);
+
+    const memoria = [
+      `1. Base de Cálculo informada: ${base.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+      deducoes > 0 ? `2. Deduções legais: - ${deducoes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : `2. Deduções legais: Nenhuma dedução aplicada`,
+      `3. Base Tributável Efetiva: ${baseTributavel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+      `4. Alíquota municipal aplicada: ${aliquota}%`,
+      `5. Valor Bruto Apurado: ${valorBruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+      isencaoPct > 0 ? `6. Isenção/Desconto Fiscal (${isencaoPct}%): - ${valorIsencao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : `6. Isenções fiscais: 0%`,
+      `7. Total Líquido Devido ao Município: ${valorLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+    ];
+
+    // Registra auditoria
+    MOCK_LOGS.unshift({
+      id: `LOG-${Date.now()}`,
+      data_hora: new Date().toLocaleString('pt-BR'),
+      usuario: 'auditor.fiscal@palmas.to.gov.br',
+      acao: 'CALCULO',
+      detalhes: `Cálculo realizado para ${dados.tipo_tributo}. Base: R$ ${base} → Devido: R$ ${valorLiquido}`,
+      ip_origem: '127.0.0.1 (Frontend)',
+    });
+
+    return {
+      id_calculo: `CALC-${Date.now()}`,
+      data_execucao: new Date().toLocaleString('pt-BR'),
+      tributo: dados.tipo_tributo,
+      base_calculo: base,
+      aliquota_aplicada: aliquota,
+      valor_bruto: valorBruto,
+      deducoes_aplicadas: deducoes,
+      isencao_aplicada: valorIsencao,
+      valor_liquido_devido: valorLiquido,
+      memoria_calculo: memoria,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 7. Logs de Auditoria e Operações (RF11 / RNF03)
+  // ---------------------------------------------------------------------------
+  static async listarLogs(): Promise<LogOperacao[]> {
+    if (USAR_BACKEND_REAL) {
+      return http<LogOperacao[]>('/auditoria/logs');
+    }
+    await delay(150);
+    return [...MOCK_LOGS];
   }
 }
