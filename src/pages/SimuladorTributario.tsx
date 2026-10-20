@@ -9,15 +9,23 @@ export const SimuladorTributario: React.FC = () => {
   const [aliquotaProposta, setAliquotaProposta] = useState<number>(1.5);
   const [baseCalculo, setBaseCalculo] = useState<number>(200000000); // 200 milhões de base venal
   const [cenarios, setCenarios] = useState<CenarioSimulacao[]>([]);
+  const [simulando, setSimulando] = useState<boolean>(false);
 
-  const handleSimular = () => {
-    const novoCenario = ApiService.simularReajuste(
-      tributo,
-      aliquotaAtual,
-      aliquotaProposta,
-      baseCalculo
-    );
-    setCenarios([novoCenario, ...cenarios]);
+  const handleSimular = async () => {
+    setSimulando(true);
+    try {
+      const novoCenario = await ApiService.simularReajuste(
+        tributo,
+        aliquotaAtual,
+        aliquotaProposta,
+        baseCalculo
+      );
+      setCenarios([novoCenario, ...cenarios]);
+    } catch (err: unknown) {
+      console.error('Erro ao simular reajuste:', err);
+    } finally {
+      setSimulando(false);
+    }
   };
 
   return (
@@ -97,9 +105,14 @@ export const SimuladorTributario: React.FC = () => {
         <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">
           <button
             onClick={handleSimular}
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-lg shadow-sm transition-colors flex items-center gap-2"
+            disabled={simulando}
+            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-lg shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
           >
-            <Calculator className="w-4 h-4" />
+            {simulando ? (
+              <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+            ) : (
+              <Calculator className="w-4 h-4" />
+            )}
             Calcular Projeção
           </button>
         </div>
