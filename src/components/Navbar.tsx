@@ -8,15 +8,19 @@ import {
   ShieldCheck,
   Coins,
   Receipt,
+  FileText,
+  History,
 } from 'lucide-react';
 
 export type AbaNavegacao =
   | 'dashboard'
   | 'busca'
+  | 'calculo'
+  | 'tributos'
   | 'simulador'
   | 'fila'
-  | 'tributos'
-  | 'calculo';
+  | 'relatorios'
+  | 'auditoria';
 
 interface NavbarProps {
   abaAtiva: AbaNavegacao;
@@ -67,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
           }`}
         >
           <LayoutDashboard className="w-4 h-4" />
-          <span>Dashboard Geral</span>
+          <span>Dashboard</span>
         </button>
 
         <button
@@ -91,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
           }`}
         >
           <Receipt className="w-4 h-4" />
-          <span>Cálculo de Tributos (RF05)</span>
+          <span>Cálculo (RF05)</span>
         </button>
 
         <button
@@ -103,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
           }`}
         >
           <Coins className="w-4 h-4" />
-          <span>Tributos & Alíquotas (RF04)</span>
+          <span>Tributos (RF04)</span>
         </button>
 
         <button
@@ -115,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
           }`}
         >
           <Calculator className="w-4 h-4" />
-          <span>Simulador & Cenários</span>
+          <span>Simulador (RF06/07)</span>
         </button>
 
         <button
@@ -127,7 +131,31 @@ export const Navbar: React.FC<NavbarProps> = ({ abaAtiva, aoMudarAba }) => {
           }`}
         >
           <ListOrdered className="w-4 h-4" />
-          <span>Fila de Cobrança (Heap)</span>
+          <span>Fila de Cobrança</span>
+        </button>
+
+        <button
+          onClick={() => aoMudarAba('relatorios')}
+          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors shrink-0 ${
+            abaAtiva === 'relatorios'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>Relatórios (RF09)</span>
+        </button>
+
+        <button
+          onClick={() => aoMudarAba('auditoria')}
+          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors shrink-0 ${
+            abaAtiva === 'auditoria'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span>Auditoria (RF11)</span>
         </button>
       </nav>
     </header>

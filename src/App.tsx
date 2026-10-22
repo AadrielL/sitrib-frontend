@@ -7,6 +7,8 @@ import { FilaCobrancaView } from './pages/FilaCobrancaView';
 import { SimuladorTributario } from './pages/SimuladorTributario';
 import { CadastroTributos } from './pages/CadastroTributos';
 import { CalculoTributoView } from './pages/CalculoTributoView';
+import { RelatoriosView } from './pages/RelatoriosView';
+import { AuditoriaLogsView } from './pages/AuditoriaLogsView';
 import { ApiService } from './services/api';
 import type { ItemFilaCobranca } from './types/tributario';
 
@@ -16,7 +18,6 @@ export const App: React.FC = () => {
   const [cpfParaConsulta, setCpfParaConsulta] = useState<string>('');
 
   useEffect(() => {
-    // Carrega a fila ordenada por prioridade (Max-Heap)
     ApiService.listarFilaCobranca().then((dados) => {
       setFila(dados);
     });
@@ -51,6 +52,10 @@ export const App: React.FC = () => {
         {abaAtiva === 'fila' && (
           <FilaCobrancaView fila={fila} aoConsultarCpf={handleConsultarCpf} />
         )}
+
+        {abaAtiva === 'relatorios' && <RelatoriosView />}
+
+        {abaAtiva === 'auditoria' && <AuditoriaLogsView />}
       </main>
 
       {/* Rodapé Institucional */}
