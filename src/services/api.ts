@@ -11,6 +11,9 @@ import type {
   SolicitacaoCalculo,
   ResultadoCalculo,
   LogOperacao,
+  IndicadoresDashboard,
+  RelatorioEcossistema,
+  SincronizacaoETLResult,
 } from '../types/tributario';
 import {
   MOCK_CONTRIBUINTES,
@@ -347,5 +350,68 @@ export class ApiService {
     }
     await delay(150);
     return [...MOCK_LOGS];
+  }
+
+  // ---------------------------------------------------------------------------
+  // 8. Dashboard de Indicadores e KPIs (Endpoint 5)
+  //    Backend: GET /api/v1/dashboard/indicadores
+  // ---------------------------------------------------------------------------
+  static async obterIndicadoresDashboard(): Promise<IndicadoresDashboard> {
+    if (USAR_BACKEND_REAL) {
+      return http<IndicadoresDashboard>('/dashboard/indicadores');
+    }
+    await delay(200);
+    return {
+      total_arrecadado_estimado: 45890000.0,
+      total_divida_ativa: 32431.25,
+      contribuintes_inadimplentes: 3,
+      distribuicao_tributos: {
+        IPTU: 62.5,
+        ISS: 27.0,
+        Taxas: 10.5,
+      },
+      indicadores_ibge: {
+        municipio: 'Palmas',
+        uf: 'TO',
+        renda_media: 3250.5,
+        populacao: 313349,
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 9. Relatório Geral do Ecossistema em Markdown (Endpoint 6)
+  //    Backend: GET /api/v1/relatorios/ecossistema
+  // ---------------------------------------------------------------------------
+  static async obterRelatorioEcossistema(): Promise<RelatorioEcossistema> {
+    if (USAR_BACKEND_REAL) {
+      return http<RelatorioEcossistema>('/relatorios/ecossistema');
+    }
+    await delay(200);
+    return {
+      formato: 'markdown',
+      conteudo: `# Relatório Geral do Ecossistema Tributário — SITRIB\n**Município:** Palmas / TO\n\n- Arrecadação Estimada: R$ 45.890.000,00\n- Dívida Ativa Mapeada: R$ 32.431,25`,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 10. Sincronização do Pipeline ETL (Endpoint 7)
+  //     Backend: POST /api/v1/etl/sincronizar
+  // ---------------------------------------------------------------------------
+  static async sincronizarETL(): Promise<SincronizacaoETLResult> {
+    if (USAR_BACKEND_REAL) {
+      return http<SincronizacaoETLResult>('/etl/sincronizar', { method: 'POST' });
+    }
+    await delay(400);
+    return {
+      status: 'sucesso',
+      mensagem: 'Pipeline de ETL executado com sucesso (Modo Mock).',
+      registros_carregados: {
+        contribuintes: MOCK_CONTRIBUINTES.length,
+        imoveis: MOCK_IMOVEIS.length,
+        dividas: MOCK_DIVIDAS.length,
+        processos: MOCK_PROCESSOS.length,
+      },
+    };
   }
 }

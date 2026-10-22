@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DollarSign,
   AlertTriangle,
@@ -7,8 +7,11 @@ import {
   TrendingUp,
   Cpu,
   ArrowRight,
+  RefreshCw,
+  CheckCircle,
 } from 'lucide-react';
-import type { ItemFilaCobranca } from '../types/tributario';
+import { ApiService } from '../services/api';
+import type { ItemFilaCobranca, IndicadoresDashboard } from '../types/tributario';
 
 interface DashboardProps {
   fila: ItemFilaCobranca[];
@@ -17,6 +20,38 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ fila, aoVerFila, aoConsultarCpf }) => {
+  const [indicadores, setIndicadores] = useState<IndicadoresDashboard | null>(null);
+  const [sincronizando, setSincronizando] = useState<boolean>(false);
+  const [mensagemSinc, setMensagemSinc] = useState<string | null>(null);
+
+  const carregarIndicadores = async () => {
+    try {
+      const dados = await ApiService.obterIndicadoresDashboard();
+      setIndicadores(dados);
+    } catch (err: unknown) {
+      console.error('Erro ao carregar indicadores:', err);
+    }
+  };
+
+  useEffect(() => {
+    carregarIndicadores();
+  }, []);
+
+  const handleSincronizarETL = async () => {
+    setSincronizando(true);
+    setMensagemSinc(null);
+    try {
+      const res = await ApiService.sincronizarETL();
+      setMensagemSinc(res.mensagem);
+      await carregarIndicadores();
+      setTimeout(() => setMensagemSinc(null), 3500);
+    } catch (err: unknown) {
+      console.error(err);
+    } finally {
+      setSincronizando(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho da página */}
@@ -27,12 +62,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ fila, aoVerFila, aoConsult
             Visão consolidada de tributos municipais, dívida ativa e inteligência de cobrança de Palmas / TO.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSincronizarETL}
+            disabled={sincronizando}
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${sincronizando ? 'animate-spin' : ''}`} />
+            Sincronizar Dados (ETL)
+          </button>
+
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-            Base Ativa: Exercício 2024
+            Base Ativa: Exercício 2026
           </span>
         </div>
       </div>
+
+      {mensagemSinc && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{mensagemSinc}</span>
+        </div>
+      )}
 
       {/* Cards de Métricas Principais (KPIs - RF10) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -45,10 +97,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ fila, aoVerFila, aoConsult
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">R$ 2.450.000,00</div>
+          <div className="mt-2 text-2xl font-bold font-mono text-slate-900">
+            {(indicadores?.total_arrecadado_estimado ?? 45890000).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            })}
+          </div>
           <div className="mt-1 flex items-center text-xs text-emerald-600 font-medium">
             <TrendingUp className="w-3.5 h-3.5 mr-1" />
-            <span>+12.4% comparado a 2023</span>
+            <span>Estimativa auditada com base na PGV</span>
           </div>
         </div>
 
@@ -61,39 +118,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ fila, aoVerFila, aoConsult
               <AlertTriangle className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">R$ 32.431,25</div>
+          <div className="mt-2 text-2xl font-bold font-mono text-slate-900">
+            {(indicadores?.total_divida_ativa ?? 32431.25).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            })}
+          </div>
           <div className="mt-1 text-xs text-slate-500">
-            <span>4 títulos em aberto / ajuizados</span>
+            <span>Débitos ativos e ajuizados</span>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition-shadow">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Processos de Execução
+              Inadimplentes Ativos
             </span>
             <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
               <Scale className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">2 Ações</div>
+          <div className="mt-2 text-2xl font-bold font-mono text-slate-900">
+            {(indicadores?.contribuintes_inadimplentes ?? 3)} Contribuintes
+          </div>
           <div className="mt-1 text-xs text-rose-600 font-medium">
-            <span>1ª e 2ª Vara de Execução Fiscal</span>
+            <span>Priorizados no Max-Heap de cobrança</span>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition-shadow">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Contribuintes Mapeados
+              Dados IBGE Palmas / TO
             </span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">5 Titulares</div>
+          <div className="mt-2 text-2xl font-bold font-mono text-slate-900">
+            {(indicadores?.indicadores_ibge?.populacao ?? 313349).toLocaleString('pt-BR')} hab.
+          </div>
           <div className="mt-1 text-xs text-slate-500">
-            <span>5 imóveis e lotes vinculados</span>
+            <span>Renda média: R$ {(indicadores?.indicadores_ibge?.renda_media ?? 3250.5).toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -175,11 +241,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ fila, aoVerFila, aoConsult
           <div>
             <div className="flex items-center gap-2 text-emerald-400 mb-2">
               <Cpu className="w-5 h-5" />
-              <span className="text-xs font-bold uppercase tracking-wider">Engenharia da Sprint 2</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Engenharia do SITRIB</span>
             </div>
             <h4 className="text-lg font-bold text-white mb-2">Estruturas de Dados Integradas</h4>
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              O backend e frontend implementam estruturas fundamentais de ciência da computação para suportar alta volumetria tributária:
+              O backend em Python e o frontend em React consomem estruturas fundamentais para alta volumetria:
             </p>
 
             <ul className="space-y-3 text-xs">
@@ -196,7 +262,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ fila, aoVerFila, aoConsult
                   O(log n)
                 </span>
                 <div>
-                  <strong className="text-white">Max-Heap (Fila):</strong> Ordenação automática dos devedores mais críticos sem recalcular a base.
+                  <strong className="text-white">Max-Heap (Fila):</strong> Ordenação automática dos devedores mais críticos por score.
                 </div>
               </li>
               <li className="flex items-start gap-2">
@@ -204,7 +270,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ fila, aoVerFila, aoConsult
                   Grafo
                 </span>
                 <div>
-                  <strong className="text-white">Rede de Relações:</strong> Cruzamento de Contribuintes $\rightarrow$ Imóveis $\rightarrow$ Execuções Fiscais.
+                  <strong className="text-white">Rede de Relações:</strong> Cruzamento Contribuintes → Imóveis → Processos Judiciais.
                 </div>
               </li>
             </ul>

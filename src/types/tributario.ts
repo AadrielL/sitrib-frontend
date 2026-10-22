@@ -134,3 +134,43 @@ export interface LogOperacao {
   detalhes: string;
   ip_origem: string;
 }
+
+
+// -------------------------------------------------------------
+// Indicadores de Dashboard e Ecossistema (Endpoints 5, 6, 7)
+// -------------------------------------------------------------
+
+export interface IndicadoresIBGE {
+  municipio: string;
+  uf: string;
+  renda_media: number;
+  populacao: number;
+}
+
+export interface IndicadoresDashboard {
+  total_arrecadado_estimado: number;
+  total_divida_ativa: number;
+  contribuintes_inadimplentes: number;
+  distribuicao_tributos: {
+    IPTU: number;
+    ISS: number;
+    Taxas: number;
+  };
+  indicadores_ibge: IndicadoresIBGE;
+}
+
+export interface RelatorioEcossistema {
+  formato: string;
+  conteudo: string;
+}
+
+export interface SincronizacaoETLResult {
+  status: string;
+  mensagem: string;
+  registros_carregados: {
+    contribuintes: number;
+    imoveis: number;
+    dividas: number;
+    processos: number;
+  };
+}
