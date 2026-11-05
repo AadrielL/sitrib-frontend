@@ -10,14 +10,14 @@ export const SimuladorTributario: React.FC = () => {
   const [baseCalculo, setBaseCalculo] = useState<number>(200000000); // 200 milhões de base venal
   const [cenarios, setCenarios] = useState<CenarioSimulacao[]>([]);
 
-  const handleSimular = () => {
-    const novoCenario = ApiService.simularReajuste(
+  const handleSimular = async () => {
+    const novoCenario = await ApiService.simularReajuste(
       tributo,
       aliquotaAtual,
       aliquotaProposta,
       baseCalculo
     );
-    setCenarios([novoCenario, ...cenarios]);
+    setCenarios((prev) => [novoCenario, ...prev]);
   };
 
   return (
