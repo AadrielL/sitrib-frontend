@@ -13,11 +13,18 @@ export const App: React.FC = () => {
   const [fila, setFila] = useState<ItemFilaCobranca[]>([]);
   const [cpfParaConsulta, setCpfParaConsulta] = useState<string>('');
 
+  const carregarFila = () => {
+    ApiService.listarFilaCobranca()
+      .then((dados) => {
+        setFila(dados);
+      })
+      .catch((err) => {
+        console.error('Falha ao listar fila de cobranca:', err);
+      });
+  };
+
   useEffect(() => {
-    // Carrega a fila ordenada por prioridade (Max-Heap)
-    ApiService.listarFilaCobranca().then((dados) => {
-      setFila(dados);
-    });
+    carregarFila();
   }, []);
 
   const handleConsultarCpf = (cpf: string) => {
@@ -35,6 +42,7 @@ export const App: React.FC = () => {
             fila={fila}
             aoVerFila={() => setAbaAtiva('fila')}
             aoConsultarCpf={handleConsultarCpf}
+            aoRecarregarDados={carregarFila}
           />
         )}
 

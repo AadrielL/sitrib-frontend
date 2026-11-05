@@ -77,3 +77,18 @@ export interface CenarioSimulacao {
   diferenca: number;
   variacao_percentual: number;
 }
+
+export interface IndicadoresDashboard {
+  total_arrecadado_estimado: number;
+  total_divida_ativa: number;
+  contribuintes_inadimplentes: number;
+  distribuicao_tributos: {
+    [key: string]: number;
+  };
+  indicadores_ibge: {
+    municipio: string;
+    uf: string;
+    renda_media: number;
+    populacao: number;
+  };
+}
