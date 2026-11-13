@@ -9,6 +9,26 @@ export type StatusDivida = 'ATIVO' | 'AJUIZADO' | 'QUITADO';
 export type TipoTributo = 'IPTU' | 'ISS' | 'TAXA_LIXO' | 'ALVARA';
 export type StatusProcesso = 'EM_ANDAMENTO' | 'SUSPENSO' | 'QUITADO';
 
+// Perfis de Acesso (RBAC)
+export type PerfilUsuario = 'administrador' | 'gestao' | 'consulta';
+
+export interface UsuarioLogado {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: PerfilUsuario;
+  cpf?: string;
+}
+
+export interface UsuarioTeste {
+  perfil: PerfilUsuario;
+  titulo: string;
+  email: string;
+  senha: string;
+  cpf?: string;
+  descricao: string;
+}
+
 export interface Contribuinte {
   nome: string;
   cpf_cnpj: string;
@@ -91,4 +111,17 @@ export interface IndicadoresDashboard {
     renda_media: number;
     populacao: number;
   };
+}
+
+export interface PredicaoInadimplenciaResponse {
+  valor_debito: number;
+  dias_atraso: number;
+  renda_media_regiao: number;
+  bairro_setor: string;
+  probabilidade_inadimplencia: string;
+  probabilidade_recuperacao: string;
+  faixa_recuperabilidade: string;
+  prioridade_execucao: number;
+  recomendacao_fiscal: string;
+  modelo_utilizado: string;
 }
