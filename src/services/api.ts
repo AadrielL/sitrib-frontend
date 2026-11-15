@@ -9,12 +9,13 @@ import type {
   TipoTributo,
   IndicadoresDashboard,
   UsuarioLogado,
-  UsuarioTeste,
   PredicaoInadimplenciaResponse,
+  OpcoesFiltrosAuditoria,
+  ConsultaDebitosAuditoriaResponse,
 } from '../types/tributario';
 
-// URL da API Backend FastAPI conectada ao SQLite (sitrib.db)
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+// URL da API Backend FastAPI (configurável via VITE_API_URL para Hostinger/Produção)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 const CHAVE_TOKEN = 'sitrib_auth_token';
 const CHAVE_USUARIO = 'sitrib_auth_user';
 
@@ -58,13 +59,13 @@ export class ApiService {
   }
 
   /**
-   * Autenticação / Login
+   * Autenticação oficial / Login via CPF ou E-mail
    */
-  static async login(email: string, senha: string): Promise<{ usuario: UsuarioLogado; token: string }> {
+  static async login(identificador: string, senha: string): Promise<{ usuario: UsuarioLogado; token: string }> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha }),
+      body: JSON.stringify({ identificador, email: identificador, senha }),
     });
 
     if (!response.ok) {
@@ -78,18 +79,53 @@ export class ApiService {
   }
 
   /**
-   * Retorna os usuários de demonstração da SEFIN
+   * Cadastro real de usuário no SITRIB (vincula CPF e verifica perfil servidor/cidadão)
    */
-  static async listarUsuariosTeste(): Promise<UsuarioTeste[]> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/usuarios-teste`);
-      if (response.ok) {
-        return await response.json();
-      }
-      return [];
-    } catch {
-      return [];
+  static async cadastrarUsuario(dados: {
+    nome: string;
+    email: string;
+    senha: string;
+    cpf: string;
+    telefone?: string;
+  }): Promise<{ usuario: UsuarioLogado; token: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/cadastrar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    });
+
+    if (!response.ok) {
+      const erro = await response.json().catch(() => ({}));
+      throw new Error(erro.detail || 'Falha ao cadastrar usuário.');
     }
+
+    const data = await response.json();
+    ApiService.salvarSessao(data.token, data.usuario);
+    return data;
+  }
+
+  /**
+   * Autenticação oficial Gov.br (Login Único) com checagem de vínculo servidor vs. cidadão
+   */
+  static async autenticarGovBr(
+    cpf: string,
+    nome?: string,
+    nivel_govbr: string = 'OURO'
+  ): Promise<{ usuario: UsuarioLogado; token: string; mensagem?: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/govbr/autenticar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cpf, nome: nome || undefined, nivel_govbr }),
+    });
+
+    if (!response.ok) {
+      const erro = await response.json().catch(() => ({}));
+      throw new Error(erro.detail || 'Falha na autenticação Gov.br.');
+    }
+
+    const data = await response.json();
+    ApiService.salvarSessao(data.token, data.usuario);
+    return data;
   }
 
   /**
@@ -270,7 +306,68 @@ export class ApiService {
       }
       throw new Error(`Erro na API (${response.status}) ao persistir no banco.`);
     } catch (err: any) {
-      throw new Error(err.message || 'Falha ao conectar à API para persistência no SQLite.');
+      throw new Error(err.message || 'Falha ao conectar à API para persistência.');
     }
+  }
+
+  /**
+   * Retorna todas as opções dinâmicas de categorias e colunas existentes no banco para Auditoria
+   */
+  static async obterOpcoesFiltrosAuditoria(): Promise<OpcoesFiltrosAuditoria> {
+    const response = await fetch(`${API_BASE_URL}/auditoria/opcoes-filtros`, {
+      headers: ApiService.obterHeaders(),
+    });
+    if (!response.ok) {
+      const erro = await response.json().catch(() => ({}));
+      throw new Error(erro.detail || 'Erro ao carregar filtros de auditoria.');
+    }
+    return await response.json();
+  }
+
+  /**
+   * Consulta paginada e categorizada de débitos para o Servidor/Auditor Fiscal
+   */
+  static async consultarDebitosAuditoria(
+    filtros: Record<string, string | number | boolean | undefined | null>
+  ): Promise<ConsultaDebitosAuditoriaResponse> {
+    const params = new URLSearchParams();
+    Object.entries(filtros).forEach(([chave, valor]) => {
+      if (valor !== undefined && valor !== null && String(valor).trim() !== '') {
+        params.append(chave, String(valor));
+      }
+    });
+
+    const response = await fetch(`${API_BASE_URL}/auditoria/debitos?${params.toString()}`, {
+      headers: ApiService.obterHeaders(),
+    });
+    if (!response.ok) {
+      const erro = await response.json().catch(() => ({}));
+      throw new Error(erro.detail || 'Erro ao consultar auditoria paginada.');
+    }
+    return await response.json();
+  }
+
+  /**
+   * Executa coleta ao vivo nas APIs municipais (Dual, Portal Novo ou API Antiga) + ETL
+   */
+  static async executarColetaMunicipal(
+    origem: 'dual' | 'portal_novo' | 'api_antiga'
+  ): Promise<{
+    status: string;
+    banco_ativo: string;
+    origem_selecionada: string;
+    modo_efetivo: string;
+    registros_obtidos: number;
+    mensagem: string;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/coleta/executar?origem=${encodeURIComponent(origem)}`, {
+      method: 'POST',
+      headers: ApiService.obterHeaders(),
+    });
+    if (!response.ok) {
+      const erro = await response.json().catch(() => ({}));
+      throw new Error(erro.detail || 'Falha ao executar coleta nas APIs da prefeitura.');
+    }
+    return await response.json();
   }
 }

@@ -18,6 +18,87 @@ export interface UsuarioLogado {
   email: string;
   perfil: PerfilUsuario;
   cpf?: string;
+  matricula_servidor?: string;
+  nivel_govbr?: string;
+  vinculo_govbr?: boolean;
+  tipo_vinculo?: string;
+}
+
+export interface OpcoesFiltrosAuditoria {
+  exercicios_ano: number[];
+  meses_vencimento_ativos: number[];
+  tipos_tributo: string[];
+  status_divida: string[];
+  bairros: string[];
+  tipos_imovel: string[];
+  tipos_pessoa: string[];
+  status_processo: string[];
+  varas_judiciais: string[];
+  fontes_coleta: string[];
+  colunas_banco: Record<string, string[]>;
+}
+
+export interface DebitoAuditoriaItem {
+  id_divida: number;
+  codigo_debito: string;
+  origem_api: string;
+  exercicio_ano: number;
+  data_vencimento: string;
+  mes_vencimento: number;
+  valor_original: number;
+  juros_multa: number;
+  valor_atualizado: number;
+  tipo_tributo: string;
+  status_divida: string;
+  inscricao_cci: string;
+  endereco_imovel: string;
+  bairro: string;
+  cep: string;
+  tipo_imovel: string;
+  valor_venal: number;
+  cpf_cnpj_contribuinte: string;
+  nome_contribuinte: string;
+  tipo_pessoa: string;
+  email_contribuinte?: string;
+  telefone_contribuinte?: string;
+  tem_processo: boolean;
+  numero_processo?: string | null;
+  vara_judicial?: string | null;
+  status_processo?: string | null;
+  data_ajuizamento?: string | null;
+}
+
+export interface ConsultaDebitosAuditoriaResponse {
+  banco_ativo: string;
+  paginacao: {
+    pagina_atual: number;
+    page_size: number;
+    total_registros: number;
+    total_paginas: number;
+    tem_proxima: boolean;
+    tem_anterior: boolean;
+  };
+  resumo_categoria: {
+    soma_valor_original: number;
+    soma_juros_multa: number;
+    soma_valor_atualizado: number;
+    quantidade_debitos: number;
+    maiores_devedores_periodo: Array<{
+      cpf_cnpj: string;
+      nome: string;
+      tipo_pessoa: string;
+      total_devido_filtro: number;
+      quantidade_debitos: number;
+    }>;
+    indice_exercicio_2026: {
+      ano_referencia: number;
+      ipca_acumulado_aplicado: string;
+      ufip_palmas_2026: string;
+      meta_recuperacao_divida_ativa_2026: string;
+      status_indice: string;
+    };
+  };
+  itens: DebitoAuditoriaItem[];
 }
 
 export interface UsuarioTeste {
