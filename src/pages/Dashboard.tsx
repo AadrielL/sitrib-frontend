@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  DollarSign,
-  AlertTriangle,
-  Scale,
-  Users,
-  TrendingUp,
-  Cpu,
-  ArrowRight,
-  RefreshCw,
-  Database,
-  CheckCircle2,
-} from 'lucide-react';
+import { RefreshCw, ArrowRight } from 'lucide-react';
 import type { ItemFilaCobranca, IndicadoresDashboard } from '../types/tributario';
 import { ApiService } from '../services/api';
 
@@ -27,36 +16,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
   aoConsultarCpf,
   aoRecarregarDados,
 }) => {
-  const [indicadores, setIndicadores] = useState<IndicadoresDashboard | null>(null);
+  const [indicadores, setIndicadores] = useState<(IndicadoresDashboard & Record<string, any>) | null>(null);
+  const [parecerIA, setParecerIA] = useState<any>(null);
   const [carregando, setCarregando] = useState<boolean>(false);
-  const [mensagemSucesso, setMensagemSucesso] = useState<string>('');
+  const [mensagem, setMensagem] = useState<string>('');
 
-  const carregarIndicadores = async () => {
-    try {
-      const dados = await ApiService.obterIndicadores();
-      setIndicadores(dados);
-    } catch (err) {
-      console.error('Falha ao carregar indicadores:', err);
-    }
+  const carregarDados = async () => {
+    const ind = await ApiService.obterIndicadores();
+    setIndicadores(ind);
+    const par = await ApiService.obterParecerExecutivoIA('DASHBOARD');
+    setParecerIA(par);
   };
 
   useEffect(() => {
-    carregarIndicadores();
+    carregarDados();
   }, []);
 
   const handleSincronizarBanco = async () => {
     setCarregando(true);
-    setMensagemSucesso('');
+    setMensagem('');
     try {
       const res = await ApiService.sincronizarBanco();
-      await carregarIndicadores();
-      if (aoRecarregarDados) {
-        aoRecarregarDados();
-      }
-      setMensagemSucesso(res.mensagem || 'Banco SQLite (sitrib.db) persistido e sincronizado!');
-      setTimeout(() => setMensagemSucesso(''), 5000);
+      await carregarDados();
+      if (aoRecarregarDados) aoRecarregarDados();
+      setMensagem(res.mensagem || 'Banco PostgreSQL sincronizado.');
     } catch (err: any) {
-      alert(err.message || 'Erro ao sincronizar banco.');
+      setMensagem(err.message || 'Modo exemplo local ativo.');
     } finally {
       setCarregando(false);
     }
@@ -64,242 +49,191 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho da página com botão de Sincronização SQLite */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Cabeçalho Institucional — Área: Auditoria (Vinho) */}
+      <div className="border-b-2 border-[#7f1d1d] pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Painel Geral de Arrecadação e Fiscalização</h2>
-          <p className="text-sm text-slate-500">
-            Dados fiscais em tempo real integrados com SQLite (<code>sitrib.db</code>) e indicadores do IBGE.
+          <span className="text-[11px] font-bold uppercase tracking-widest text-[#7f1d1d]">
+            Área de Auditoria Fiscal • SEFIN Palmas
+          </span>
+          <h2 className="text-xl font-bold text-neutral-950 mt-0.5">
+            Painel Geral de Arrecadação e Fiscalização
+          </h2>
+          <p className="text-xs text-neutral-500">
+            Visão consolidada do estoque da Dívida Ativa, Arrecadação Municipal Oficial e indicadores socioeconômicos de Palmas.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSincronizarBanco}
-            disabled={carregando}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
-            title="Recarrega as sementes e persiste no banco SQLite real"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin' : ''}`} />
-            <Database className="w-3.5 h-3.5" />
-            <span>{carregando ? 'Persistindo...' : 'Recarregar / Persistir no BD'}</span>
-          </button>
-          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
-            ● BD SQLite Conectado
-          </span>
-        </div>
+
+        <button
+          onClick={handleSincronizarBanco}
+          disabled={carregando}
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#7f1d1d] hover:bg-[#601515] text-white rounded text-xs font-semibold transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin' : ''}`} />
+          <span>{carregando ? 'Atualizando...' : 'Atualizar Base Cadastral'}</span>
+        </button>
       </div>
 
-      {/* Banner de Feedback de Sincronização */}
-      {mensagemSucesso && (
-        <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-medium animate-fadeIn">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{mensagemSucesso}</span>
+      {mensagem && (
+        <div className="p-3 bg-neutral-100 border-l-4 border-[#7f1d1d] text-neutral-800 text-xs">
+          {mensagem}
         </div>
       )}
 
-      {/* Cards de Métricas Principais (KPIs Reais da API - RF10) */}
+      {/* Métricas Sóbrias (Fundo Branco, Borda Cinza e Destaque Vinho/Preto) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Arrecadação Estimada
-            </span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <DollarSign className="w-5 h-5" />
-            </div>
+        <div className="bg-white p-4 border border-neutral-300 border-t-4 border-t-[#7f1d1d] rounded">
+          <div className="text-[11px] font-bold uppercase text-neutral-500">
+            Dívida Ativa Registrada
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">
-            {indicadores?.total_arrecadado_estimado
-              ? indicadores.total_arrecadado_estimado.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })
-              : 'R$ 45.890.000,00'}
+          <div className="text-xl font-bold font-mono text-neutral-950 mt-1">
+            {(indicadores?.total_divida_ativa ?? 1084481.25).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            })}
           </div>
-          <div className="mt-1 flex items-center text-xs text-emerald-600 font-medium">
-            <TrendingUp className="w-3.5 h-3.5 mr-1" />
-            <span>IPTU (62.5%) e ISS (27%)</span>
+          <div className="text-[11px] text-neutral-500 mt-1">
+            {indicadores?.contribuintes_inadimplentes ?? fila.length} contribuintes •{' '}
+            {indicadores?.total_processos_ajuizados ?? 7} execuções
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Dívida Ativa Registrada
-            </span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
+        <div className="bg-white p-4 border border-neutral-300 border-t-4 border-t-neutral-900 rounded">
+          <div className="text-[11px] font-bold uppercase text-neutral-500">
+            Arrecadação Municipal Oficial
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">
-            {indicadores?.total_divida_ativa
-              ? indicadores.total_divida_ativa.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })
-              : 'R$ 32.431,25'}
+          <div className="text-xl font-bold font-mono text-neutral-950 mt-1">
+            {(indicadores?.total_arrecadado_estimado ?? 1810016926.07).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            })}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
-            <span>Títulos ativos no SQLite</span>
+          <div className="text-[11px] text-neutral-500 mt-1">
+            {(indicadores?.registros_prefeitura_portal_novo ?? 10000).toLocaleString('pt-BR')} registros contábeis auditados
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Inadimplência Fiscal
-            </span>
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
-              <Scale className="w-5 h-5" />
-            </div>
+        <div className="bg-white p-4 border border-neutral-300 border-t-4 border-t-neutral-600 rounded">
+          <div className="text-[11px] font-bold uppercase text-neutral-500">
+            População & Renda IBGE Palmas
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">
-            {indicadores?.contribuintes_inadimplentes ?? fila.length} Contribuintes
+          <div className="text-xl font-bold font-mono text-neutral-950 mt-1">
+            {(indicadores?.indicadores_ibge?.populacao ?? 313349).toLocaleString('pt-BR')} hab.
           </div>
-          <div className="mt-1 text-xs text-rose-600 font-medium">
-            <span>Processos em Varas Fiscais</span>
+          <div className="text-[11px] text-neutral-500 mt-1">
+            Renda Média Domiciliar: R$ {(indicadores?.indicadores_ibge?.renda_media ?? 3250.5).toFixed(2)}
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition-shadow">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Cruzamento IBGE Palmas
-            </span>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <Users className="w-5 h-5" />
-            </div>
+        <div className="bg-white p-4 border border-neutral-300 border-t-4 border-t-[#7f1d1d] rounded">
+          <div className="text-[11px] font-bold uppercase text-neutral-500">
+            Índice Fiscal Palmas 2026
           </div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">
-            {indicadores?.indicadores_ibge?.populacao
-              ? `${indicadores.indicadores_ibge.populacao.toLocaleString('pt-BR')} hab.`
-              : '313.349 hab.'}
+          <div className="text-xl font-bold font-mono text-neutral-950 mt-1">
+            UFIP: {indicadores?.indice_2026?.ufip_palmas_2026 ?? 'R$ 4,48'}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
-            <span>Renda Média: R$ {indicadores?.indicadores_ibge?.renda_media?.toFixed(2) ?? '3.250,50'}</span>
+          <div className="text-[11px] text-neutral-500 mt-1">
+            IPCA Referência: {indicadores?.indice_2026?.ipca_referencia ?? '4.62%'} a.a.
           </div>
         </div>
       </div>
 
-      {/* Grid Central: Fila de Cobrança (Heap) + Arquitetura de Estruturas de Dados */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Tabela de Top Prioridade de Cobrança (Max-Heap) */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                Fila Prioritária de Cobrança (Max-Heap)
-              </h3>
-              <p className="text-xs text-slate-500">
-                Ordenação logarítmica O(log n) por score de inadimplência gerada pela API do SITRIB.
-              </p>
-            </div>
-            <button
-              onClick={aoVerFila}
-              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-            >
-              Ver fila completa
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-semibold border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Score Risco</th>
-                  <th className="px-4 py-3">Contribuinte</th>
-                  <th className="px-4 py-3">Documento</th>
-                  <th className="px-4 py-3">Débito Total</th>
-                  <th className="px-4 py-3 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {fila.slice(0, 4).map((item) => (
-                  <tr key={item.cpf_cnpj} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
-                          item.score >= 80
-                            ? 'bg-rose-100 text-rose-800'
-                            : item.score >= 50
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}
-                      >
-                        {item.score} pts
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-medium text-slate-800">{item.nome}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{item.cpf_cnpj}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">
-                      {item.valor_total.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => aoConsultarCpf(item.cpf_cnpj)}
-                        className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold hover:underline"
-                      >
-                        Consultar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Card Lateral: Tecnologias e Estruturas da Sprint 2 */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl shadow-sm p-6 flex flex-col justify-between">
+      {/* Resumo da Fila Prioritária de Cobrança */}
+      <div className="bg-white border border-neutral-300 rounded overflow-hidden">
+        <div className="px-5 py-3.5 bg-neutral-100 border-b border-neutral-300 flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 text-emerald-400 mb-2">
-              <Cpu className="w-5 h-5" />
-              <span className="text-xs font-bold uppercase tracking-wider">Engenharia da Sprint 2</span>
-            </div>
-            <h4 className="text-lg font-bold text-white mb-2">Estruturas de Dados Integradas</h4>
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              O backend e frontend implementam estruturas fundamentais de ciência da computação para suportar alta volumetria tributária:
+            <h3 className="text-sm font-bold text-neutral-950">
+              Topo da Fila Prioritária de Cobrança e Conciliação
+            </h3>
+            <p className="text-[11px] text-neutral-500">
+              Ordenação orientada por impacto fiscal e potencial de recuperação (Sigilo Fiscal Art. 198 CTN & LGPD).
             </p>
-
-            <ul className="space-y-3 text-xs">
-              <li className="flex items-start gap-2">
-                <span className="bg-emerald-500/20 text-emerald-400 font-mono font-bold px-1.5 py-0.5 rounded text-[10px]">
-                  O(1)
-                </span>
-                <div>
-                  <strong className="text-white">Tabela Hash:</strong> Indexação direta e instantânea de débitos fiscais por CPF/CNPJ.
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="bg-blue-500/20 text-blue-400 font-mono font-bold px-1.5 py-0.5 rounded text-[10px]">
-                  O(log n)
-                </span>
-                <div>
-                  <strong className="text-white">Max-Heap (Fila):</strong> Ordenação automática dos devedores mais críticos sem recalcular a base.
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="bg-purple-500/20 text-purple-400 font-mono font-bold px-1.5 py-0.5 rounded text-[10px]">
-                  Grafo
-                </span>
-                <div>
-                  <strong className="text-white">Rede de Relações:</strong> Cruzamento de Contribuintes → Imóveis → Execuções Fiscais.
-                </div>
-              </li>
-            </ul>
           </div>
+          <button
+            onClick={aoVerFila}
+            className="text-xs font-bold text-[#7f1d1d] hover:underline flex items-center gap-1"
+          >
+            <span>Abrir Fila Completa</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-700 text-center">
-            <span className="text-[11px] text-slate-400">
-              Projeto Integrador UFT • Ciência da Computação
-            </span>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
+              <tr>
+                <th className="px-4 py-2.5">Score</th>
+                <th className="px-4 py-2.5">Contribuinte</th>
+                <th className="px-4 py-2.5">Documento</th>
+                <th className="px-4 py-2.5">Bairro</th>
+                <th className="px-4 py-2.5 text-right">Débito Total</th>
+                <th className="px-4 py-2.5 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-200">
+              {fila.slice(0, 5).map((item) => (
+                <tr key={item.cpf_cnpj} className="hover:bg-neutral-50">
+                  <td className="px-4 py-2.5 font-mono font-bold text-[#7f1d1d]">{item.score} pts</td>
+                  <td className="px-4 py-2.5 font-semibold text-neutral-900">{item.nome}</td>
+                  <td className="px-4 py-2.5 font-mono text-neutral-600">{item.cpf_cnpj}</td>
+                  <td className="px-4 py-2.5 text-neutral-600">{item.bairro_principal || 'Plano Diretor'}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-bold text-neutral-950">
+                    {item.valor_total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <button
+                      onClick={() => aoConsultarCpf(item.cpf_cnpj)}
+                      className="px-2.5 py-1 bg-neutral-900 hover:bg-[#7f1d1d] text-white rounded text-[11px] font-semibold transition-colors"
+                    >
+                      Dossiê
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      {/* Síntese Cognitiva da IA ("Texto para Pensar" do Auditor) */}
+      {parecerIA && parecerIA.topicos_para_pensar_ia && (
+        <div className="bg-white border border-neutral-300 rounded p-5 space-y-4">
+          <div className="border-b border-neutral-200 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+                Apoio à Decisão Humana (Art. 20 LGPD)
+              </span>
+              <h3 className="text-sm font-bold text-neutral-950">
+                Síntese Analítica da IA — Pontos de Reflexão para o Auditor Fiscal
+              </h3>
+            </div>
+            <span className="text-[11px] font-mono text-neutral-500">
+              Cruzamento Cadastral & Socioeconômico (IBGE)
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {parecerIA.topicos_para_pensar_ia.map((t: any, idx: number) => (
+              <div
+                key={idx}
+                className="p-4 bg-neutral-50 border border-neutral-200 border-l-4 border-l-neutral-900 rounded space-y-2"
+              >
+                <h4 className="text-xs font-bold text-neutral-950">{t.titulo}</h4>
+                <p className="text-xs text-neutral-700 leading-relaxed">{t.analise_ia}</p>
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {(t.colunas_utilizadas || []).map((col: string) => (
+                    <span
+                      key={col}
+                      className="px-2 py-0.5 bg-white border border-neutral-300 rounded text-[10px] font-mono text-neutral-600"
+                    >
+                      {col}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

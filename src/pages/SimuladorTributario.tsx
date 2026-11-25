@@ -7,167 +7,184 @@ export const SimuladorTributario: React.FC = () => {
   const [tributo, setTributo] = useState<TipoTributo>('IPTU');
   const [aliquotaAtual, setAliquotaAtual] = useState<number>(1.25);
   const [aliquotaProposta, setAliquotaProposta] = useState<number>(1.5);
-  const [baseCalculo, setBaseCalculo] = useState<number>(200000000); // 200 milhões de base venal
+  const [baseCalculo, setBaseCalculo] = useState<number>(200000000);
   const [cenarios, setCenarios] = useState<CenarioSimulacao[]>([]);
+  const [simulando, setSimulando] = useState(false);
 
   const handleSimular = async () => {
-    const novoCenario = await ApiService.simularReajuste(
-      tributo,
-      aliquotaAtual,
-      aliquotaProposta,
-      baseCalculo
-    );
-    setCenarios((prev) => [novoCenario, ...prev]);
+    setSimulando(true);
+    try {
+      const novoCenario = await ApiService.simularReajuste(
+        tributo,
+        aliquotaAtual,
+        aliquotaProposta,
+        baseCalculo
+      );
+      setCenarios((prev) => [novoCenario, ...prev]);
+    } catch (err) {
+      console.error('Falha ao simular reajuste:', err);
+    } finally {
+      setSimulando(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Cabeçalho */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800">Simulador de Reajuste e Cenários Fiscais</h2>
-        <p className="text-sm text-slate-500">
-          Modelagem orçamentária do SITRIB (RF06 / RF07). Simule alterações de alíquotas e projete a arrecadação municipal.
+      <div className="border-b border-neutral-200 pb-4">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-neutral-600" />
+          <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+            Transparência Fiscal & Planejamento Tributário
+          </span>
+        </div>
+        <h1 className="text-2xl font-bold text-neutral-900">Simulador de Reajuste & Cenários Fiscais</h1>
+        <p className="text-sm text-neutral-600">
+          Projeção orçamentária do impacto de alterações de alíquotas (IPTU, ISS, Taxas) sobre a arrecadação do Município de Palmas.
         </p>
       </div>
 
-      {/* Painel de Parâmetros de Entrada */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <Calculator className="w-5 h-5 text-emerald-600" />
-          Definição dos Parâmetros da Simulação
-        </h3>
+      {/* Parâmetros da Simulação */}
+      <div className="bg-white border border-neutral-200 rounded p-5 space-y-4">
+        <h2 className="text-base font-bold text-neutral-900">Parâmetros da Modelagem</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Tipo de Tributo</label>
+            <label className="block text-xs font-medium text-neutral-700 mb-1">Tipo de Tributo</label>
             <select
               value={tributo}
               onChange={(e) => setTributo(e.target.value as TipoTributo)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full px-3 py-2 text-xs border border-neutral-300 rounded bg-white text-neutral-800"
             >
-              <option value="IPTU">IPTU (Imposto Predial e Territorial Urbano)</option>
-              <option value="ISS">ISS (Imposto Sobre Serviços)</option>
+              <option value="IPTU">IPTU (Predial e Territorial)</option>
+              <option value="ISS">ISS (Serviços)</option>
               <option value="TAXA_LIXO">Taxa de Resíduos Sólidos</option>
               <option value="ALVARA">Taxa de Localização / Alvará</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Alíquota Atual (%)</label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                value={aliquotaAtual}
-                onChange={(e) => setAliquotaAtual(parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
-              />
-              <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">%</span>
-            </div>
+            <label className="block text-xs font-medium text-neutral-700 mb-1">Alíquota Atual (%)</label>
+            <input
+              type="number"
+              step="0.05"
+              min="0"
+              value={aliquotaAtual}
+              onChange={(e) => setAliquotaAtual(parseFloat(e.target.value) || 0)}
+              className="w-full px-3 py-2 text-xs border border-neutral-300 rounded font-mono"
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Alíquota Proposta (%)</label>
-            <div className="relative">
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                value={aliquotaProposta}
-                onChange={(e) => setAliquotaProposta(parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
-              />
-              <span className="absolute right-3 top-2 text-xs text-slate-400 font-bold">%</span>
-            </div>
+            <label className="block text-xs font-medium text-neutral-700 mb-1">Alíquota Proposta (%)</label>
+            <input
+              type="number"
+              step="0.05"
+              min="0"
+              value={aliquotaProposta}
+              onChange={(e) => setAliquotaProposta(parseFloat(e.target.value) || 0)}
+              className="w-full px-3 py-2 text-xs border border-neutral-300 rounded font-mono"
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Base de Cálculo Total (R$)</label>
+            <label className="block text-xs font-medium text-neutral-700 mb-1">Base de Cálculo Total (R$)</label>
             <input
               type="number"
               step="1000000"
               value={baseCalculo}
               onChange={(e) => setBaseCalculo(parseFloat(e.target.value) || 0)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
+              className="w-full px-3 py-2 text-xs border border-neutral-300 rounded font-mono"
             />
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">
+        <div className="pt-2 flex justify-end">
           <button
             onClick={handleSimular}
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-lg shadow-sm transition-colors flex items-center gap-2"
+            disabled={simulando}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-neutral-900 text-white rounded hover:bg-neutral-800 transition-colors disabled:opacity-50"
           >
-            <Calculator className="w-4 h-4" />
-            Calcular Projeção
+            <Calculator className="w-3.5 h-3.5" />
+            <span>{simulando ? 'Calculando impacto...' : 'Simular Projeção de Arrecadação'}</span>
           </button>
         </div>
       </div>
 
-      {/* Resultados e Comparador de Cenários (RF07) */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-slate-800">Cenários de Reajuste Analisados ({cenarios.length})</h3>
+      {/* Histórico de Cenários Simulados */}
+      <div className="bg-white border border-neutral-200 rounded p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+          <h2 className="text-base font-bold text-neutral-900">Cenários Fiscais Projetados</h2>
+          <span className="text-xs text-neutral-500 font-mono">
+            {cenarios.length} simulação(ões) nesta sessão
+          </span>
+        </div>
 
         {cenarios.length === 0 ? (
-          <div className="bg-white p-8 rounded-xl border border-dashed border-slate-300 text-center text-slate-400 text-sm">
-            Nenhuma simulação gerada ainda. Ajuste as alíquotas acima e clique em &quot;Calcular Projeção&quot;.
+          <div className="py-8 text-center text-xs text-neutral-400">
+            Nenhuma simulação realizada ainda. Ajuste as alíquotas acima e clique em &quot;Simular Projeção&quot;.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {cenarios.map((cenario) => (
-              <div
-                key={cenario.id}
-                className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4"
-              >
-                <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-sm">{cenario.nome}</h4>
-                    <span className="text-xs text-slate-400 font-mono">
-                      Base: {cenario.base_calculo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
-                  </div>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
-                      cenario.diferenca >= 0
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-rose-100 text-rose-800'
-                    }`}
-                  >
-                    {cenario.diferenca >= 0 ? (
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 mr-1" />
-                    )}
-                    {cenario.variacao_percentual > 0 ? `+${cenario.variacao_percentual}%` : `${cenario.variacao_percentual}%`}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-slate-50 rounded-lg">
-                    <div className="text-slate-500 font-medium">Receita Atual ({cenario.aliquota_atual}%)</div>
-                    <div className="text-base font-bold text-slate-800 mt-1">
-                      {cenario.valor_atual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          <div className="space-y-3">
+            {cenarios.map((cenario) => {
+              const diferencaPositiva = cenario.diferenca >= 0;
+              return (
+                <div
+                  key={cenario.id}
+                  className="border border-neutral-200 rounded p-4 bg-neutral-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-neutral-900">{cenario.tributo}</span>
+                      <span className="text-[11px] font-mono text-neutral-500">
+                        {cenario.aliquota_atual}% &rarr; {cenario.aliquota_proposta}%
+                      </span>
+                    </div>
+                    <div className="text-xs text-neutral-600">
+                      Base Tributável:{' '}
+                      <strong className="font-mono text-neutral-800">
+                        R$ {cenario.base_calculo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </strong>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-lg">
-                    <div className="text-emerald-700 font-medium">Receita Projetada ({cenario.aliquota_proposta}%)</div>
-                    <div className="text-base font-bold text-emerald-900 mt-1">
-                      {cenario.valor_projetado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase text-neutral-400 font-bold">Arrecadação Atual</div>
+                      <div className="text-xs font-mono font-medium text-neutral-700">
+                        R$ {cenario.valor_atual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase text-neutral-400 font-bold">Projeção Nova</div>
+                      <div className="text-xs font-mono font-bold text-neutral-900">
+                        R$ {cenario.valor_projetado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+
+                    <div className="text-right pl-4 border-l border-neutral-200">
+                      <div className="text-[10px] uppercase text-neutral-400 font-bold">Impacto Orçamentário</div>
+                      <div className="text-sm font-mono font-bold text-neutral-900 flex items-center justify-end gap-1">
+                        {diferencaPositiva ? (
+                          <TrendingUp className="w-3.5 h-3.5 text-neutral-900" />
+                        ) : (
+                          <TrendingDown className="w-3.5 h-3.5 text-neutral-600" />
+                        )}
+                        <span>
+                          {diferencaPositiva ? '+' : ''}
+                          R$ {cenario.diferenca.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-neutral-500 font-mono">
+                        ({diferencaPositiva ? '+' : ''}
+                        {cenario.variacao_percentual.toFixed(2)}%)
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="pt-2 text-xs flex justify-between items-center text-slate-600">
-                  <span>Impacto Financeiro Líquido:</span>
-                  <span className="font-bold font-mono text-sm text-slate-900">
-                    {cenario.diferenca > 0 ? `+` : ''}
-                    {cenario.diferenca.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -153,8 +153,25 @@ export interface ItemFilaCobranca {
   cpf_cnpj: string;
   nome: string;
   valor_total: number;
+  faixa_devedor?: 'Grande devedor' | 'Médio devedor' | 'Pequeno devedor' | string;
   quantidade_debitos: number;
   tem_processo_judicial: boolean;
+  tempo_inadimplencia_dias?: number;
+  bairros?: string[];
+  bairro_principal?: string;
+  tipos_tributo?: string[];
+  tipo_tributo_str?: string;
+  exercicios?: string;
+  processos_numeros?: string[];
+}
+
+export interface FiltrosFilaCobranca {
+  categoria?: string;
+  tipo_tributo?: string;
+  bairro?: string;
+  apenas_ajuizados?: boolean;
+  busca?: string;
+  ordenar_por?: 'score' | 'valor';
 }
 
 export interface DossieImovel {
@@ -205,4 +222,90 @@ export interface PredicaoInadimplenciaResponse {
   prioridade_execucao: number;
   recomendacao_fiscal: string;
   modelo_utilizado: string;
+}
+
+// ==============================================================================
+// Tipagens da Base Real da Prefeitura (182k+ Registros PostgreSQL) e Agentes IA
+// ==============================================================================
+
+export interface ReceitaPrefeituraItem {
+  id_receita: number;
+  ano: number;
+  mes: number;
+  orgao: string;
+  orgao_nome: string;
+  unidade_nome: string;
+  codigo: string;
+  codigo_original: string;
+  descricao: string;
+  nivel_hierarquico: number;
+  eh_raiz_contabil: boolean;
+  valor_orcado: number;
+  valor_arrecado_mes: number;
+  valor_arrecado_periodo: number;
+  covid: string;
+  data_coleta: string;
+}
+
+export interface ConsultaReceitasPrefeituraResponse {
+  banco_ativo: string;
+  tabela: string;
+  paginacao: {
+    pagina_atual: number;
+    page_size: number;
+    total_registros: number;
+    total_paginas: number;
+    tem_proxima: boolean;
+    tem_anterior: boolean;
+  };
+  auditoria_hierarquia_armadilha_5_4: {
+    soma_ingenua_com_dupla_contagem: number;
+    soma_correta_sem_dupla_contagem_raiz: number;
+    soma_composicao_nivel_3: number;
+    fator_multiplicacao_detectado: string;
+    explicacao: string;
+  };
+  itens: ReceitaPrefeituraItem[];
+}
+
+export interface AgenteMicrosservicoInfo {
+  id_agente: string;
+  nome: string;
+  microsservico_pasta: string;
+  url_servico: string;
+  escopo_estrito: string;
+  ferramentas_permitidas: string[];
+  proibicoes: string[];
+}
+
+export interface AvaliacaoCapacidadeFairnessRequest {
+  valor_debito: number;
+  dias_atraso: number;
+  tipo_tributo: 'IPTU' | 'ISS' | 'TAXA_LIXO';
+  tipo_pessoa: 'FISICA' | 'JURIDICA';
+  bairro: string;
+  quantidade_imoveis: number;
+}
+
+export interface AvaliacaoCapacidadeFairnessResponse {
+  agente: string;
+  microsservico: string;
+  ferramenta_executada: string;
+  diagnostico_capacidade_contributiva: {
+    pode_pagar: boolean;
+    status_codigo: string;
+    classificacao: string;
+    indice_comprometimento_renda_12x_pct: number;
+    renda_media_setor_ibge: number;
+    instrumento_fiscal_recomendado: string;
+  };
+  predicao_machine_learning: any;
+  auditoria_vies_e_lgpd: {
+    blind_inference_sem_cpf_nome: boolean;
+    dados_pessoais_expostos: string;
+    setor_abaixo_mediana_ibge: boolean;
+    correcao_fairness_aplicada: boolean;
+    parecer_etico_fairness: string;
+    fundamento_legal: string;
+  };
 }

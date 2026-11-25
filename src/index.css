@@ -13,3 +13,67 @@ body {
   background-color: #f8fafc;
   color: #0f172a;
 }
+
+/* Modo Alto Contraste (WCAG AAA / Daltonismo) */
+.modo-alto-contraste {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.modo-alto-contraste header,
+.modo-alto-contraste main,
+.modo-alto-contraste .bg-white,
+.modo-alto-contraste .bg-slate-50,
+.modo-alto-contraste .bg-slate-100 {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+  border-color: #facc15 !important;
+}
+
+.modo-alto-contraste button {
+  border-color: #facc15 !important;
+  color: #facc15 !important;
+}
+
+.modo-alto-contraste .text-slate-500,
+.modo-alto-contraste .text-slate-600,
+.modo-alto-contraste .text-slate-700,
+.modo-alto-contraste .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+.modo-alto-contraste .text-emerald-600,
+.modo-alto-contraste .text-emerald-700 {
+  color: #4ade80 !important;
+}
+
+.modo-alto-contraste .text-rose-600,
+.modo-alto-contraste .text-rose-700 {
+  color: #f87171 !important;
+}
+
+/* Modo Simplificado / Leitura Limpa (Idosos e Baixa Visão) */
+.modo-limpo {
+  font-size: 1.125rem !important;
+  line-height: 1.75 !important;
+}
+
+.modo-limpo h1 {
+  font-size: 2.25rem !important;
+}
+
+.modo-limpo h2 {
+  font-size: 1.75rem !important;
+}
+
+.modo-limpo h3, .modo-limpo h4 {
+  font-size: 1.35rem !important;
+}
+
+.modo-limpo button,
+.modo-limpo input,
+.modo-limpo select {
+  font-size: 1rem !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
